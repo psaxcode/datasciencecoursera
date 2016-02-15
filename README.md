@@ -1,3 +1,3 @@
 data product coursera course
 ===================
-ui.R and server.R files for my shiny app
+ui.R and server.R files and a reproducible presentation for my shiny app
