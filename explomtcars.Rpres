@@ -1,0 +1,107 @@
+Exploring the mtcars dataset: an interactive approach
+========================================================
+author: XY
+date: Feburary 9, 2016
+font-family: 'Helvetica'
+
+
+What It Does
+========================================================
+type:prompt
+incremental:true
+This App provides students with an interactive way to explore the *mtcars* dataset.  
+It visualizes the simple linear regression method and the statistical uncertainties associated with it. 
+
+### Key features:
+- Allows the student to choose the variables for exploration 
+- Makes scatter plots of mpg variable against the chosen variable
+- Generates the residual plots and the confidence interval of the coefficients 
+- Compares different subsets of data
+
+The Regression Line
+========================================================
+
+```{r, echo = FALSE,fig.height=5,fig.width=7,fig.align="left"}
+
+library(ggplot2)
+library(dplyr)
+library(broom)
+grouping <- c('cyl',"vs","am","gear")
+varmap <- list ('Displacement' ='disp',
+                'Gross horsepower'='hp',
+                'Rear axle ratio'='drat',
+                'Weight'='wt',
+                '1/4 mile time'='qsec',
+                'Number of carburetors'='carb')
+groupmap <- list(
+        'None'='none',
+        #'Number of cylinders'='cyl',
+        'V/S'='vs',
+        'Transmission'='am')
+##'Number of forward gears'='gear')
+mainplot <- function(variable,group){
+        plotmap <- ggplot(data=mtcars,aes_string(x=variable,y="mpg"))
+        if (group == "none"){
+                baseplot <- plotmap + geom_point(size=3,color="salmon")
+        } else {
+                baseplot <-plotmap + geom_point(aes_string(color=group),size=3) +
+                        facet_grid(paste0(".~",group))
+        }
+        baseplot + geom_smooth(method="lm")
+        
+}
+
+my_group_by <- function(datatb,group){
+        #Takes a data table and a character string
+        if(group=='none'){
+                return(datatb)}
+        else {
+                group_by_(datatb,group)
+                }
+}
+
+#make these two variable categorical
+input <- data_frame(variable="Weight",groupby="None")
+mtcars <- mtcars %>% mutate(am=as.factor(am))%>%mutate(vs=as.factor(vs))
+mainplot(varmap[[input$variable]],groupmap[[input$groupby]])
+```
+***
+- Let's plot mpg against wt using the full dataset
+- Notice the regression line and its condifence interval
+
+
+The coefficients and their confidence interval 
+===============================================================
+
+```{r,echo=FALSE}
+baseplot <- mtcars %>% 
+        my_group_by(groupmap[[input$groupby]])%>%
+        do(tidy(lm(as.formula(paste0("mpg~",varmap[[input$variable]])),data=.),
+                conf.int=T))%>%
+        ggplot(aes_string('term','estimate'))+
+        geom_errorbar(aes(ymin=conf.low,ymax=conf.high))
+
+if(groupmap[[input$groupby]]=="none"){
+        baseplot + geom_point(color="salmon",size=3)
+} else{
+        baseplot + geom_point(aes_string(color=groupmap[[input$groupby]]),size=3)
+}
+
+
+```
+
+The residual plot
+====================================================
+
+```{r,echo=FALSE}
+baseplot <- mtcars  %>% 
+        my_group_by(groupmap[[input$groupby]])%>%
+        do(augment(lm(as.formula(paste0("mpg~",varmap[[input$variable]])),data=.)))%>%
+        ggplot(aes_string(varmap[[input$variable]],'.resid')) +
+        geom_hline(yintercept=0)
+if (input$groupby=='None'){
+        baseplot + geom_point(color='salmon',size=3)
+}else{
+        baseplot + facet_grid(paste0('.~',groupmap[[input$groupby]]))+geom_point(aes_string(color=groupmap[[input$groupby]]),size=3)}
+```
+
