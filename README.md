@@ -1,4 +1,3 @@
-datasciencecoursera
+data product coursera course
 ===================
-
-Codes and HW for The Data Scientist’s Toolbox
+ui.R and server.R files for my shiny app
